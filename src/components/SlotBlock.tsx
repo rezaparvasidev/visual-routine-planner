@@ -62,18 +62,22 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
 
   useLayoutEffect(() => {
     const el = titleRef.current
-    if (!el) return
+    const container = el?.parentElement
+    if (!el || !container) return
 
     function measure(): void {
-      if (!el) return
+      if (!el || !container) return
+      // The title span shrinks to fit its own text, so it never reports a
+      // resize itself - measure against the container's available width.
+      const available = container.clientWidth
       el.style.fontSize = `${TITLE_FONT_SIZE}px`
-      if (el.scrollWidth <= el.clientWidth) {
+      if (el.scrollWidth <= available) {
         setTitleFontSize(TITLE_FONT_SIZE)
         setTitleTruncated(false)
         return
       }
       el.style.fontSize = `${TITLE_FONT_SIZE_SHRUNK}px`
-      if (el.scrollWidth <= el.clientWidth) {
+      if (el.scrollWidth <= available) {
         setTitleFontSize(TITLE_FONT_SIZE_SHRUNK)
         setTitleTruncated(false)
         return
@@ -85,7 +89,7 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
 
     measure()
     const observer = new ResizeObserver(measure)
-    observer.observe(el)
+    observer.observe(container)
     return () => observer.disconnect()
   }, [slot.title, isRenaming])
 
