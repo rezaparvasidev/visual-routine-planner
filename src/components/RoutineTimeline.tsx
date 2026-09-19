@@ -30,6 +30,7 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
   const setSleep = useRoutinesStore((s) => s.setSleep)
   const createSlotAt = useRoutinesStore((s) => s.createSlotAt)
   const addSlot = useRoutinesStore((s) => s.addSlot)
+  const duplicateRoutine = useRoutinesStore((s) => s.duplicateRoutine)
   const deleteRoutine = useRoutinesStore((s) => s.deleteRoutine)
   const renameRoutine = useRoutinesStore((s) => s.renameRoutine)
   const clearSelection = useRoutinesStore((s) => s.clearSelection)
@@ -88,6 +89,8 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
   for (let m = viewStart; m <= viewEnd; m += 30) {
     gridLines.push({ minutes: m, isHour: m % 60 === 0 })
   }
+  const NOON_MINUTES = 12 * 60
+  const showNoonLine = NOON_MINUTES >= viewStart && NOON_MINUTES <= viewEnd
 
   return (
     <div className="routine-timeline">
@@ -102,6 +105,7 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
           <button onClick={() => addSlot(routineId)} disabled={!canAddSlot}>
             + Add Slot
           </button>
+          <button onClick={() => duplicateRoutine(routineId)}>Duplicate Routine</button>
           <button
             className="danger"
             onClick={() => {
@@ -148,6 +152,12 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
             style={{ left: `${minutesToPercent(g.minutes, viewStart, viewEnd)}%` }}
           />
         ))}
+        {showNoonLine && (
+          <div
+            className="noon-line"
+            style={{ left: `${minutesToPercent(NOON_MINUTES, viewStart, viewEnd)}%` }}
+          />
+        )}
         <div className="inactive-region" style={{ left: 0, width: `${wakePercent}%` }} />
         <div
           className="inactive-region"

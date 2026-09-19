@@ -3,9 +3,9 @@ import { subscribeWithSelector } from 'zustand/middleware'
 import type { Routine } from '@shared/domain'
 import { createId } from '../lib/id'
 import { DEFAULT_SLOT_DURATION } from '../lib/time'
+import { PRESET_COLORS } from '../lib/colors'
 import * as ops from '../lib/slotOps'
 
-export const DEFAULT_SLOT_COLOR = '#4C8BF5'
 export const DEFAULT_WAKE_MINUTES = 7 * 60
 export const DEFAULT_SLEEP_MINUTES = 23 * 60
 
@@ -24,6 +24,23 @@ function createDefaultRoutine(name: string): Routine {
   }
 }
 
+/** Cycles through the preset palette so each new-from-scratch slot gets a different color. */
+let nextColorIndex = 0
+function nextSlotColor(): string {
+  const color = PRESET_COLORS[nextColorIndex % PRESET_COLORS.length]
+  nextColorIndex += 1
+  return color
+}
+
+function duplicateRoutineData(routine: Routine): Routine {
+  return {
+    ...routine,
+    id: createId(),
+    name: `${routine.name} (copy)`,
+    slots: routine.slots.map((s) => ({ ...s, id: createId() }))
+  }
+}
+
 interface RoutinesState {
   routines: Routine[]
   loaded: boolean
@@ -31,6 +48,7 @@ interface RoutinesState {
 
   init(): Promise<void>
   addRoutine(): void
+  duplicateRoutine(routineId: string): void
   deleteRoutine(routineId: string): void
   renameRoutine(routineId: string, name: string): void
   setWake(routineId: string, rawMinutes: number): void
@@ -70,6 +88,17 @@ export const useRoutinesStore = create<RoutinesState>()(
     addRoutine() {
       const routine = createDefaultRoutine(`Routine ${get().routines.length + 1}`)
       set((state) => ({ routines: [...state.routines, routine] }))
+    },
+
+    duplicateRoutine(routineId) {
+      set((state) => {
+        const idx = state.routines.findIndex((r) => r.id === routineId)
+        if (idx === -1) return state
+        const copy = duplicateRoutineData(state.routines[idx])
+        const routines = state.routines.slice()
+        routines.splice(idx + 1, 0, copy)
+        return { routines }
+      })
     },
 
     deleteRoutine(routineId) {
@@ -121,7 +150,7 @@ export const useRoutinesStore = create<RoutinesState>()(
             r,
             startMinutes,
             endMinutes,
-            DEFAULT_SLOT_COLOR,
+            nextSlotColor(),
             'New Slot'
           )
           createdId = slot.id
@@ -138,7 +167,7 @@ export const useRoutinesStore = create<RoutinesState>()(
           const { routine, slot } = ops.addSlotToGap(
             r,
             DEFAULT_SLOT_DURATION,
-            DEFAULT_SLOT_COLOR,
+            nextSlotColor(),
             'New Slot'
           )
           createdId = slot?.id ?? null

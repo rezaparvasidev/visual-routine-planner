@@ -26,6 +26,7 @@ export default function RoutineOverview({ routine, onDragWake, onDragSleep }: Pr
         className="overview-active"
         style={{ left: `${wakePercent}%`, width: `${sleepPercent - wakePercent}%` }}
       />
+      <div className="noon-line" style={{ left: '50%' }} />
       <WakeSleepHandle trackRef={trackRef} minutes={routine.wakeMinutes} onDrag={onDragWake} label="Wake" />
       <WakeSleepHandle
         trackRef={trackRef}

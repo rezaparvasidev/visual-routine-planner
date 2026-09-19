@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -14,6 +15,8 @@ import { useRoutinesStore } from '../state/routinesStore'
 import ColorPopover from './ColorPopover'
 
 const MOVE_THRESHOLD_PX = 3
+const TITLE_FONT_SIZE = 13
+const TITLE_FONT_SIZE_SHRUNK = 11
 
 interface Props {
   routineId: string
@@ -42,6 +45,9 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
   const dragStartMinutes = useRef(0)
   const didMove = useRef(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLSpanElement>(null)
+  const [titleFontSize, setTitleFontSize] = useState<number>(TITLE_FONT_SIZE)
+  const [titleTruncated, setTitleTruncated] = useState(false)
 
   useEffect(() => {
     if (!isSelected) setColorPickerOpen(false)
@@ -53,6 +59,35 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
       titleInputRef.current?.select()
     }
   }, [isRenaming])
+
+  useLayoutEffect(() => {
+    const el = titleRef.current
+    if (!el) return
+
+    function measure(): void {
+      if (!el) return
+      el.style.fontSize = `${TITLE_FONT_SIZE}px`
+      if (el.scrollWidth <= el.clientWidth) {
+        setTitleFontSize(TITLE_FONT_SIZE)
+        setTitleTruncated(false)
+        return
+      }
+      el.style.fontSize = `${TITLE_FONT_SIZE_SHRUNK}px`
+      if (el.scrollWidth <= el.clientWidth) {
+        setTitleFontSize(TITLE_FONT_SIZE_SHRUNK)
+        setTitleTruncated(false)
+        return
+      }
+      el.style.fontSize = `${TITLE_FONT_SIZE}px`
+      setTitleFontSize(TITLE_FONT_SIZE)
+      setTitleTruncated(true)
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [slot.title, isRenaming])
 
   const leftPercent = minutesToPercent(slot.startMinutes, viewStart, viewEnd)
   const widthPercent = minutesToPercent(slot.endMinutes, viewStart, viewEnd) - leftPercent
@@ -164,7 +199,14 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
             onDoubleClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <span className="slot-title">{slot.title}</span>
+          <span
+            ref={titleRef}
+            className="slot-title"
+            style={{ fontSize: titleFontSize }}
+            title={titleTruncated ? slot.title : undefined}
+          >
+            {slot.title}
+          </span>
         )}
       </div>
 

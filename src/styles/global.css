@@ -212,6 +212,17 @@ input[type='text'] {
   background: rgba(255, 255, 255, 0.14);
 }
 
+.noon-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #ff4040;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .timeline-track .inactive-region {
   position: absolute;
   top: 0;
