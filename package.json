@@ -1,0 +1,32 @@
+{
+  "name": "visual-routine-planner",
+  "version": "0.1.0",
+  "description": "Visually build unlimited, date-free day routines with drag-and-drop timelines.",
+  "main": "./out/main/index.js",
+  "author": "reza021@gmail.com",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && electron-vite build",
+    "preview": "electron-vite preview",
+    "dist": "npm run build && electron-builder --win nsis",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+  },
+  "dependencies": {
+    "@electron-toolkit/utils": "^3.0.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  }
+}

@@ -1,0 +1,13 @@
+appId: com.reza.visualroutineplanner
+productName: Visual Routine Planner
+directories:
+  buildResources: build
+  output: release
+files:
+  - out/**/*
+win:
+  target: nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
