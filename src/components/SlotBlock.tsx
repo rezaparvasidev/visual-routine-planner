@@ -10,7 +10,7 @@ import {
   type RefObject
 } from 'react'
 import type { Slot } from '@shared/domain'
-import { formatMinutes, minutesToPercent, pixelsToMinutes, snapMinutes } from '../lib/time'
+import { formatDuration, formatMinutes, minutesToPercent, pixelsToMinutes, snapMinutes } from '../lib/time'
 import { useRoutinesStore } from '../state/routinesStore'
 import ColorPopover from './ColorPopover'
 
@@ -210,6 +210,11 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
             title={titleTruncated ? slot.title : undefined}
           >
             {slot.title}
+          </span>
+        )}
+        {!isRenaming && (
+          <span className="slot-duration">
+            {formatDuration(slot.endMinutes - slot.startMinutes)}
           </span>
         )}
       </div>
