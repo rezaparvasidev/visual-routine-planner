@@ -1,7 +1,6 @@
 import { useEffect, type ReactElement } from 'react'
 import { useRoutinesStore } from './state/routinesStore'
 import RoutineList from './components/RoutineList'
-import logo from './assets/logo.png'
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -34,10 +33,6 @@ export default function App(): ReactElement {
 
   return (
     <div className="app">
-      <div className="app-header">
-        <img src={logo} alt="" className="app-logo" />
-        <h1>Visual Routine Planner</h1>
-      </div>
       {loaded ? <RoutineList /> : <div className="app-loading">Loading routines…</div>}
     </div>
   )

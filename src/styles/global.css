@@ -7,7 +7,7 @@
   --text-dim: #9a9ca6;
   --accent: #4c8bf5;
   --danger: #e5484d;
-  --track-height: 96px;
+  --track-height: 108px;
 }
 
 * {
@@ -74,24 +74,6 @@ input[type='text'] {
   height: 100%;
   overflow-y: auto;
   padding: 24px 32px 64px;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
-}
-
-.app-logo {
-  width: 28px;
-  height: 28px;
-}
-
-.app-header h1 {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
 }
 
 .app-loading,
@@ -284,12 +266,10 @@ input[type='text'] {
 
 .slot-block {
   position: absolute;
-  top: 6px;
+  top: 20px;
   bottom: 6px;
   border-radius: 4px;
   cursor: grab;
-  display: flex;
-  align-items: center;
   padding: 0 8px;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
 }
@@ -305,9 +285,19 @@ input[type='text'] {
   z-index: 3;
 }
 
-.slot-block .slot-title {
-  flex: 1 1 auto;
+.slot-content {
+  height: 100%;
+  width: 100%;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.slot-block .slot-title {
+  max-width: 100%;
   font-size: 13px;
   font-weight: 700;
   color: #10131a;
@@ -317,8 +307,7 @@ input[type='text'] {
 }
 
 .slot-title-input {
-  flex: 1 1 auto;
-  min-width: 0;
+  max-width: 100%;
   width: 100%;
   font-size: 13px;
   font-weight: 700;
@@ -332,18 +321,24 @@ input[type='text'] {
 
 .slot-time-label {
   position: absolute;
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: -16px;
   font-size: 10px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text);
   background: rgba(0, 0, 0, 0.55);
   padding: 1px 5px;
   border-radius: 3px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 4;
+}
+
+.slot-time-label--start {
+  left: 0;
+}
+
+.slot-time-label--end {
+  right: 0;
 }
 
 .slot-block .slot-edge {
@@ -364,16 +359,11 @@ input[type='text'] {
 }
 
 .slot-block .slot-tools {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   display: flex;
   gap: 4px;
   background: rgba(0, 0, 0, 0.6);
   padding: 3px;
   border-radius: 6px;
-  z-index: 5;
 }
 
 .slot-tool-btn {

@@ -31,7 +31,6 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
   const updateSlotTitle = useRoutinesStore((s) => s.updateSlotTitle)
   const updateSlotColor = useRoutinesStore((s) => s.updateSlotColor)
   const selectSlot = useRoutinesStore((s) => s.selectSlot)
-  const clearSelection = useRoutinesStore((s) => s.clearSelection)
   const isSelected = useRoutinesStore(
     (s) => s.selectedSlot?.routineId === routineId && s.selectedSlot?.slotId === slot.id
   )
@@ -141,75 +140,71 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
       onDoubleClick={handleDoubleClick}
     >
       {isSelected && (
-        <div className="slot-time-label">
-          {formatMinutes(slot.startMinutes)} – {formatMinutes(slot.endMinutes)}
-        </div>
+        <>
+          <div className="slot-time-label slot-time-label--start">
+            {formatMinutes(slot.startMinutes)}
+          </div>
+          <div className="slot-time-label slot-time-label--end">
+            {formatMinutes(slot.endMinutes)}
+          </div>
+        </>
       )}
 
-      {isRenaming ? (
-        <input
-          ref={titleInputRef}
-          type="text"
-          className="slot-title-input"
-          value={slot.title}
-          onChange={handleTitleInputChange}
-          onKeyDown={handleTitleInputKeyDown}
-          onBlur={() => setIsRenaming(false)}
-          onPointerDown={(e) => e.stopPropagation()}
-          onDoubleClick={(e) => e.stopPropagation()}
-        />
-      ) : (
-        <span className="slot-title">{slot.title}</span>
-      )}
+      <div className="slot-content">
+        {isRenaming ? (
+          <input
+            ref={titleInputRef}
+            type="text"
+            className="slot-title-input"
+            value={slot.title}
+            onChange={handleTitleInputChange}
+            onKeyDown={handleTitleInputKeyDown}
+            onBlur={() => setIsRenaming(false)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="slot-title">{slot.title}</span>
+        )}
 
-      {isSelected && !isRenaming && (
-        <div className="slot-tools" onPointerDown={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            className="slot-tool-btn"
-            title="Change color"
-            onClick={(e) => {
-              e.stopPropagation()
-              setColorPickerOpen((v) => !v)
-            }}
-          >
-            🎨
-          </button>
-          <button
-            type="button"
-            className="slot-tool-btn"
-            title="Duplicate slot"
-            onClick={(e) => {
-              e.stopPropagation()
-              duplicateSlot(routineId, slot.id)
-            }}
-          >
-            ⧉
-          </button>
-          <button
-            type="button"
-            className="slot-tool-btn"
-            title="Delete slot"
-            onClick={(e) => {
-              e.stopPropagation()
-              deleteSlot(routineId, slot.id)
-            }}
-          >
-            🗑
-          </button>
-          <button
-            type="button"
-            className="slot-tool-btn"
-            title="Close"
-            onClick={(e) => {
-              e.stopPropagation()
-              clearSelection()
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
+        {isSelected && !isRenaming && (
+          <div className="slot-tools" onPointerDown={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="slot-tool-btn"
+              title="Change color"
+              onClick={(e) => {
+                e.stopPropagation()
+                setColorPickerOpen((v) => !v)
+              }}
+            >
+              🎨
+            </button>
+            <button
+              type="button"
+              className="slot-tool-btn"
+              title="Duplicate slot"
+              onClick={(e) => {
+                e.stopPropagation()
+                duplicateSlot(routineId, slot.id)
+              }}
+            >
+              ⧉
+            </button>
+            <button
+              type="button"
+              className="slot-tool-btn"
+              title="Delete slot"
+              onClick={(e) => {
+                e.stopPropagation()
+                deleteSlot(routineId, slot.id)
+              }}
+            >
+              🗑
+            </button>
+          </div>
+        )}
+      </div>
 
       <div
         className="slot-edge slot-edge--left"
