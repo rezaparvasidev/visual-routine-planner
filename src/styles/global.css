@@ -335,10 +335,12 @@ input[type='text'] {
 
 .slot-time-label--start {
   left: 0;
+  transform: translateX(-50%);
 }
 
 .slot-time-label--end {
-  right: 0;
+  left: 100%;
+  transform: translateX(-50%);
 }
 
 .slot-block .slot-edge {
