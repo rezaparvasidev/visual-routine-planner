@@ -1,8 +1,17 @@
-import { useRef, useState, type PointerEvent, type ReactElement, type RefObject } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactElement,
+  type RefObject
+} from 'react'
 import type { Slot } from '@shared/domain'
-import { minutesToPercent, pixelsToMinutes, snapMinutes } from '../lib/time'
+import { formatMinutes, minutesToPercent, pixelsToMinutes, snapMinutes } from '../lib/time'
 import { useRoutinesStore } from '../state/routinesStore'
-import SlotEditor from './SlotEditor'
+import ColorPopover from './ColorPopover'
 
 const MOVE_THRESHOLD_PX = 3
 
@@ -12,34 +21,39 @@ interface Props {
   trackRef: RefObject<HTMLDivElement | null>
   viewStart: number
   viewEnd: number
-  isOpen: boolean
-  autoFocus: boolean
-  onOpen: () => void
-  onClose: () => void
 }
 
-export default function SlotBlock({
-  routineId,
-  slot,
-  trackRef,
-  viewStart,
-  viewEnd,
-  isOpen,
-  autoFocus,
-  onOpen,
-  onClose
-}: Props): ReactElement {
+export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEnd }: Props): ReactElement {
   const resizeSlotEdge = useRoutinesStore((s) => s.resizeSlotEdge)
   const moveSlot = useRoutinesStore((s) => s.moveSlot)
   const duplicateSlot = useRoutinesStore((s) => s.duplicateSlot)
   const deleteSlot = useRoutinesStore((s) => s.deleteSlot)
   const updateSlotTitle = useRoutinesStore((s) => s.updateSlotTitle)
   const updateSlotColor = useRoutinesStore((s) => s.updateSlotColor)
+  const selectSlot = useRoutinesStore((s) => s.selectSlot)
+  const clearSelection = useRoutinesStore((s) => s.clearSelection)
+  const isSelected = useRoutinesStore(
+    (s) => s.selectedSlot?.routineId === routineId && s.selectedSlot?.slotId === slot.id
+  )
 
   const [isMoving, setIsMoving] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const dragStartClientX = useRef<number | null>(null)
   const dragStartMinutes = useRef(0)
   const didMove = useRef(false)
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!isSelected) setColorPickerOpen(false)
+  }, [isSelected])
+
+  useEffect(() => {
+    if (isRenaming) {
+      titleInputRef.current?.focus()
+      titleInputRef.current?.select()
+    }
+  }, [isRenaming])
 
   const leftPercent = minutesToPercent(slot.startMinutes, viewStart, viewEnd)
   const widthPercent = minutesToPercent(slot.endMinutes, viewStart, viewEnd) - leftPercent
@@ -72,8 +86,21 @@ export default function SlotBlock({
     e.currentTarget.releasePointerCapture(e.pointerId)
     dragStartClientX.current = null
     setIsMoving(false)
-    if (!didMove.current) {
-      onOpen()
+    selectSlot(routineId, slot.id)
+  }
+
+  const handleDoubleClick = (): void => {
+    selectSlot(routineId, slot.id)
+    setIsRenaming(true)
+  }
+
+  const handleTitleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    updateSlotTitle(routineId, slot.id, e.target.value)
+  }
+
+  const handleTitleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      e.currentTarget.blur()
     }
   }
 
@@ -84,6 +111,7 @@ export default function SlotBlock({
     e.stopPropagation()
     e.currentTarget.setPointerCapture(e.pointerId)
     e.currentTarget.dataset.edge = edge
+    selectSlot(routineId, slot.id)
   }
 
   const handleEdgePointerMove = (
@@ -105,39 +133,84 @@ export default function SlotBlock({
 
   return (
     <div
-      className={`slot-block${isOpen ? ' is-open' : ''}${isMoving ? ' is-moving' : ''}`}
+      className={`slot-block${isSelected ? ' is-selected' : ''}${isMoving ? ' is-moving' : ''}`}
       style={{ left: `${leftPercent}%`, width: `${widthPercent}%`, background: slot.color }}
       onPointerDown={handleBlockPointerDown}
       onPointerMove={handleBlockPointerMove}
       onPointerUp={handleBlockPointerUp}
+      onDoubleClick={handleDoubleClick}
     >
-      <span className="slot-title">{slot.title}</span>
-      <div className="slot-tools">
-        <button
-          type="button"
-          className="slot-tool-btn"
-          title="Duplicate slot"
+      {isSelected && (
+        <div className="slot-time-label">
+          {formatMinutes(slot.startMinutes)} – {formatMinutes(slot.endMinutes)}
+        </div>
+      )}
+
+      {isRenaming ? (
+        <input
+          ref={titleInputRef}
+          type="text"
+          className="slot-title-input"
+          value={slot.title}
+          onChange={handleTitleInputChange}
+          onKeyDown={handleTitleInputKeyDown}
+          onBlur={() => setIsRenaming(false)}
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation()
-            duplicateSlot(routineId, slot.id)
-          }}
-        >
-          ⧉
-        </button>
-        <button
-          type="button"
-          className="slot-tool-btn"
-          title="Delete slot"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation()
-            deleteSlot(routineId, slot.id)
-          }}
-        >
-          ✕
-        </button>
-      </div>
+          onDoubleClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <span className="slot-title">{slot.title}</span>
+      )}
+
+      {isSelected && !isRenaming && (
+        <div className="slot-tools" onPointerDown={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="slot-tool-btn"
+            title="Change color"
+            onClick={(e) => {
+              e.stopPropagation()
+              setColorPickerOpen((v) => !v)
+            }}
+          >
+            🎨
+          </button>
+          <button
+            type="button"
+            className="slot-tool-btn"
+            title="Duplicate slot"
+            onClick={(e) => {
+              e.stopPropagation()
+              duplicateSlot(routineId, slot.id)
+            }}
+          >
+            ⧉
+          </button>
+          <button
+            type="button"
+            className="slot-tool-btn"
+            title="Delete slot"
+            onClick={(e) => {
+              e.stopPropagation()
+              deleteSlot(routineId, slot.id)
+            }}
+          >
+            🗑
+          </button>
+          <button
+            type="button"
+            className="slot-tool-btn"
+            title="Close"
+            onClick={(e) => {
+              e.stopPropagation()
+              clearSelection()
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div
         className="slot-edge slot-edge--left"
         onPointerDown={(e) => handleEdgePointerDown(e, 'start')}
@@ -150,13 +223,12 @@ export default function SlotBlock({
         onPointerMove={(e) => handleEdgePointerMove(e, 'end')}
         onPointerUp={handleEdgePointerUp}
       />
-      {isOpen && (
-        <SlotEditor
-          slot={slot}
-          autoFocus={autoFocus}
-          onTitleChange={(title) => updateSlotTitle(routineId, slot.id, title)}
-          onColorChange={(color) => updateSlotColor(routineId, slot.id, color)}
-          onClose={onClose}
+
+      {isSelected && colorPickerOpen && (
+        <ColorPopover
+          color={slot.color}
+          onChange={(color) => updateSlotColor(routineId, slot.id, color)}
+          onClose={() => setColorPickerOpen(false)}
         />
       )}
     </div>

@@ -5,12 +5,31 @@ A Windows desktop app for visually building day routines — 24-hour timelines o
 ## Features
 
 - **No dates** — every routine is a plain 24-hour timeline, not tied to a calendar.
-- **Wake / sleep bounds** — each routine's active range is set by dragging a left (wake-up) and right (sleep) handle on the 24-hour bar.
+- **Wake / sleep bounds** — each routine's active range is set on a thin full-day overview bar. The main timeline below it zooms to that range (plus a 1-hour blocked buffer on each side) so slots aren't squeezed into a tiny sliver of a full 24-hour bar.
 - **Time slots** — add colored, titled blocks between the wake and sleep bounds, either by clicking "+ Add Slot" or by clicking and dragging directly on empty timeline space.
-- **Drag-to-resize with no overlap** — dragging a slot's edge into a neighboring slot pushes that neighbor's edge to make room; slots can never overlap.
-- **Duplicate, delete, recolor, rename** — every slot can be duplicated, deleted, given a custom color, and retitled inline.
-- **Unlimited routines** — add as many independent 24-hour timelines as you want, stacked vertically.
+- **Move and resize with no overlap** — drag a slot's body to slide it, or its edges to resize it; dragging into a neighbor pushes that neighbor's edge to make room, so slots can never overlap.
+- **Select, rename, recolor, duplicate, delete** — click a slot to select it, double-click its title to rename it in place, and use its toolbar to change color, duplicate, or delete it (or just press Delete/Backspace on a selected slot).
+- **30-minute units** — snapping, minimum slot size, and the background grid are all in 30-minute increments.
+- **Unlimited routines** — add as many independent timelines as you want, stacked vertically.
 - **Autosaves locally** — routines persist to a JSON file on disk, no account or internet connection required.
+
+## Using the app
+
+1. **Create a routine** — click **+ Add Routine** to add a new 24-hour timeline.
+2. **Set wake/sleep** — drag the two handles on the thin overview bar (the glassy handles with a red center line) to set when the routine's day starts and ends. The main timeline below zooms to fit that range automatically.
+3. **Add a time slot** — either click **+ Add Slot** (fills the next open gap), or click-and-drag directly on empty space in the main timeline to draw a slot at an exact time.
+4. **Select a slot** — click it once. A toolbar appears in the center of the slot:
+   - 🎨 change its color
+   - ⧉ duplicate it
+   - 🗑 delete it
+   - ✕ close the toolbar (deselect)
+
+   You can also press **Delete** or **Backspace** to delete whichever slot is currently selected.
+5. **Rename a slot** — double-click its title text and type a new name.
+6. **Move or resize a slot** — drag the middle of a slot to slide it earlier/later, or drag its left/right edge to resize it. Dragging into a neighboring slot pushes that neighbor out of the way rather than overlapping it.
+7. **Rename or remove a routine** — edit the routine's name field directly, or use **Delete Routine** in its header.
+
+All changes save automatically to disk as you make them.
 
 ## Tech stack
 

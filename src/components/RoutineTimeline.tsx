@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react'
+import { useRef, useState, type PointerEvent, type ReactElement } from 'react'
 import { useRoutinesStore } from '../state/routinesStore'
 import { findEnclosingGap, findGaps } from '../lib/slotOps'
 import {
@@ -32,21 +32,10 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
   const addSlot = useRoutinesStore((s) => s.addSlot)
   const deleteRoutine = useRoutinesStore((s) => s.deleteRoutine)
   const renameRoutine = useRoutinesStore((s) => s.renameRoutine)
-  const pendingEditSlotId = useRoutinesStore((s) => s.pendingEditSlotId)
-  const clearPendingEdit = useRoutinesStore((s) => s.clearPendingEdit)
+  const clearSelection = useRoutinesStore((s) => s.clearSelection)
 
   const trackRef = useRef<HTMLDivElement>(null)
-  const [openEditorSlotId, setOpenEditorSlotId] = useState<string | null>(null)
-  const [autoFocusSlotId, setAutoFocusSlotId] = useState<string | null>(null)
   const [draft, setDraft] = useState<DraftRange | null>(null)
-
-  useEffect(() => {
-    if (pendingEditSlotId && routine?.slots.some((s) => s.id === pendingEditSlotId)) {
-      setOpenEditorSlotId(pendingEditSlotId)
-      setAutoFocusSlotId(pendingEditSlotId)
-      clearPendingEdit()
-    }
-  }, [pendingEditSlotId, routine, clearPendingEdit])
 
   if (!routine) return null
 
@@ -55,6 +44,7 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
 
   const handleTrackPointerDown = (e: PointerEvent<HTMLDivElement>): void => {
     if (e.target !== trackRef.current) return
+    clearSelection()
     const rect = trackRef.current.getBoundingClientRect()
     const raw = pixelsToMinutes(e.clientX - rect.left, rect.width, viewStart, viewEnd)
     const minutes = snapMinutes(raw)
@@ -174,16 +164,6 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
             trackRef={trackRef}
             viewStart={viewStart}
             viewEnd={viewEnd}
-            isOpen={openEditorSlotId === slot.id}
-            autoFocus={autoFocusSlotId === slot.id}
-            onOpen={() => {
-              setOpenEditorSlotId(slot.id)
-              setAutoFocusSlotId(null)
-            }}
-            onClose={() => {
-              setOpenEditorSlotId((cur) => (cur === slot.id ? null : cur))
-              setAutoFocusSlotId((cur) => (cur === slot.id ? null : cur))
-            }}
           />
         ))}
       </div>

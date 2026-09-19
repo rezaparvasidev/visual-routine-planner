@@ -9,6 +9,11 @@ export const DEFAULT_SLOT_COLOR = '#4C8BF5'
 export const DEFAULT_WAKE_MINUTES = 7 * 60
 export const DEFAULT_SLEEP_MINUTES = 23 * 60
 
+export interface SelectedSlot {
+  routineId: string
+  slotId: string
+}
+
 function createDefaultRoutine(name: string): Routine {
   return {
     id: createId(),
@@ -22,8 +27,7 @@ function createDefaultRoutine(name: string): Routine {
 interface RoutinesState {
   routines: Routine[]
   loaded: boolean
-  /** Slot that should have its editor auto-opened right after creation. */
-  pendingEditSlotId: string | null
+  selectedSlot: SelectedSlot | null
 
   init(): Promise<void>
   addRoutine(): void
@@ -39,7 +43,9 @@ interface RoutinesState {
   deleteSlot(routineId: string, slotId: string): void
   updateSlotTitle(routineId: string, slotId: string, title: string): void
   updateSlotColor(routineId: string, slotId: string, color: string): void
-  clearPendingEdit(): void
+  selectSlot(routineId: string, slotId: string): void
+  clearSelection(): void
+  deleteSelectedSlot(): void
 }
 
 function updateRoutine(
@@ -54,7 +60,7 @@ export const useRoutinesStore = create<RoutinesState>()(
   subscribeWithSelector((set, get) => ({
     routines: [],
     loaded: false,
-    pendingEditSlotId: null,
+    selectedSlot: null,
 
     async init() {
       const data = await window.routinesAPI.load()
@@ -67,7 +73,10 @@ export const useRoutinesStore = create<RoutinesState>()(
     },
 
     deleteRoutine(routineId) {
-      set((state) => ({ routines: state.routines.filter((r) => r.id !== routineId) }))
+      set((state) => ({
+        routines: state.routines.filter((r) => r.id !== routineId),
+        selectedSlot: state.selectedSlot?.routineId === routineId ? null : state.selectedSlot
+      }))
     },
 
     renameRoutine(routineId, name) {
@@ -119,7 +128,7 @@ export const useRoutinesStore = create<RoutinesState>()(
           return routine
         })
       }))
-      if (createdId) set({ pendingEditSlotId: createdId })
+      if (createdId) set({ selectedSlot: { routineId, slotId: createdId } })
     },
 
     addSlot(routineId) {
@@ -136,7 +145,7 @@ export const useRoutinesStore = create<RoutinesState>()(
           return routine
         })
       }))
-      if (createdId) set({ pendingEditSlotId: createdId })
+      if (createdId) set({ selectedSlot: { routineId, slotId: createdId } })
     },
 
     duplicateSlot(routineId, slotId) {
@@ -148,12 +157,16 @@ export const useRoutinesStore = create<RoutinesState>()(
           return routine
         })
       }))
-      if (createdId) set({ pendingEditSlotId: createdId })
+      if (createdId) set({ selectedSlot: { routineId, slotId: createdId } })
     },
 
     deleteSlot(routineId, slotId) {
       set((state) => ({
-        routines: updateRoutine(state.routines, routineId, (r) => ops.deleteSlot(r, slotId))
+        routines: updateRoutine(state.routines, routineId, (r) => ops.deleteSlot(r, slotId)),
+        selectedSlot:
+          state.selectedSlot?.routineId === routineId && state.selectedSlot?.slotId === slotId
+            ? null
+            : state.selectedSlot
       }))
     },
 
@@ -173,8 +186,18 @@ export const useRoutinesStore = create<RoutinesState>()(
       }))
     },
 
-    clearPendingEdit() {
-      set({ pendingEditSlotId: null })
+    selectSlot(routineId, slotId) {
+      set({ selectedSlot: { routineId, slotId } })
+    },
+
+    clearSelection() {
+      set({ selectedSlot: null })
+    },
+
+    deleteSelectedSlot() {
+      const sel = get().selectedSlot
+      if (!sel) return
+      get().deleteSlot(sel.routineId, sel.slotId)
     }
   }))
 )
