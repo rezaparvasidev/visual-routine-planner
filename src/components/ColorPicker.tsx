@@ -13,6 +13,7 @@ function isSameColor(a: string, b: string): boolean {
 
 export default function ColorPicker({ value, onChange }: Props): ReactElement {
   const routines = useRoutinesStore((s) => s.routines)
+  const pushHistory = useRoutinesStore((s) => s.pushHistory)
   const customColors = useMemo(() => {
     const used: string[] = []
     for (const routine of routines) {
@@ -36,7 +37,10 @@ export default function ColorPicker({ value, onChange }: Props): ReactElement {
           type="button"
           className={`color-swatch${isSameColor(value, color) ? ' is-selected' : ''}`}
           style={{ background: color }}
-          onClick={() => onChange(color)}
+          onClick={() => {
+            pushHistory()
+            onChange(color)
+          }}
           aria-label={`Color ${color}`}
         />
       ))}
@@ -47,7 +51,10 @@ export default function ColorPicker({ value, onChange }: Props): ReactElement {
           type="button"
           className={`color-swatch${isSameColor(value, color) ? ' is-selected' : ''}`}
           style={{ background: color }}
-          onClick={() => onChange(color)}
+          onClick={() => {
+            pushHistory()
+            onChange(color)
+          }}
           aria-label={`Custom color ${color}`}
           title={color}
         />
@@ -56,6 +63,7 @@ export default function ColorPicker({ value, onChange }: Props): ReactElement {
         type="color"
         className="color-swatch-custom"
         value={value}
+        onFocus={() => pushHistory()}
         onChange={(e) => onChange(e.target.value)}
         aria-label="Custom color"
         title="Pick a new custom color"

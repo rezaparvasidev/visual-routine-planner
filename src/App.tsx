@@ -1,6 +1,7 @@
 import { useEffect, type ReactElement } from 'react'
 import { useRoutinesStore } from './state/routinesStore'
 import RoutineList from './components/RoutineList'
+import AppToolbar from './components/AppToolbar'
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -33,6 +34,7 @@ export default function App(): ReactElement {
 
   return (
     <div className="app">
+      {loaded && <AppToolbar />}
       {loaded ? <RoutineList /> : <div className="app-loading">Loading routines…</div>}
     </div>
   )

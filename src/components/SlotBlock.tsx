@@ -24,26 +24,45 @@ interface Props {
   trackRef: RefObject<HTMLDivElement | null>
   viewStart: number
   viewEnd: number
+  /** Called on every pointermove of a body-drag with the raw desired start, in minutes.
+   * Must NOT touch the store - the caller renders this as a live, uncommitted preview so
+   * that reordering siblings mid-drag never reshuffles the DOM (which would drop pointer
+   * capture - see the note on `RoutineTimeline`'s `dragPreview` state). */
+  onMovePreview: (rawStartMinutes: number) => void
+  /** Called once on pointerup of a body-drag that actually moved, with the final raw
+   * desired start. The caller commits this to the store exactly once. */
+  onMoveCommit: (rawStartMinutes: number) => void
 }
 
-export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEnd }: Props): ReactElement {
+export default function SlotBlock({
+  routineId,
+  slot,
+  trackRef,
+  viewStart,
+  viewEnd,
+  onMovePreview,
+  onMoveCommit
+}: Props): ReactElement {
   const resizeSlotEdge = useRoutinesStore((s) => s.resizeSlotEdge)
-  const moveSlot = useRoutinesStore((s) => s.moveSlot)
   const duplicateSlot = useRoutinesStore((s) => s.duplicateSlot)
   const deleteSlot = useRoutinesStore((s) => s.deleteSlot)
   const updateSlotTitle = useRoutinesStore((s) => s.updateSlotTitle)
   const updateSlotColor = useRoutinesStore((s) => s.updateSlotColor)
   const selectSlot = useRoutinesStore((s) => s.selectSlot)
+  const pushHistory = useRoutinesStore((s) => s.pushHistory)
   const isSelected = useRoutinesStore(
     (s) => s.selectedSlot?.routineId === routineId && s.selectedSlot?.slotId === slot.id
   )
 
   const [isMoving, setIsMoving] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const dragStartClientX = useRef<number | null>(null)
   const dragStartMinutes = useRef(0)
   const didMove = useRef(false)
+  const lastRawStartRef = useRef(0)
+  const hasResizedRef = useRef(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const titleRef = useRef<HTMLSpanElement>(null)
   const [titleFontSize, setTitleFontSize] = useState<number>(TITLE_FONT_SIZE)
@@ -116,7 +135,8 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
     if (!rect) return
     const deltaMinutes = pixelsToMinutes(deltaPx, rect.width, 0, viewEnd - viewStart)
     const rawStart = snapMinutes(dragStartMinutes.current + deltaMinutes)
-    moveSlot(routineId, slot.id, rawStart)
+    lastRawStartRef.current = rawStart
+    onMovePreview(rawStart)
   }
 
   const handleBlockPointerUp = (e: PointerEvent<HTMLDivElement>): void => {
@@ -124,11 +144,15 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
     e.currentTarget.releasePointerCapture(e.pointerId)
     dragStartClientX.current = null
     setIsMoving(false)
+    if (didMove.current) {
+      onMoveCommit(lastRawStartRef.current)
+    }
     selectSlot(routineId, slot.id)
   }
 
   const handleDoubleClick = (): void => {
     selectSlot(routineId, slot.id)
+    pushHistory()
     setIsRenaming(true)
   }
 
@@ -149,6 +173,7 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
     e.stopPropagation()
     e.currentTarget.setPointerCapture(e.pointerId)
     e.currentTarget.dataset.edge = edge
+    hasResizedRef.current = false
     selectSlot(routineId, slot.id)
   }
 
@@ -159,6 +184,11 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
     if (e.buttons === 0) return
     const rect = trackRef.current?.getBoundingClientRect()
     if (!rect) return
+    if (!hasResizedRef.current) {
+      hasResizedRef.current = true
+      pushHistory()
+      setIsResizing(true)
+    }
     const px = e.clientX - rect.left
     const raw = pixelsToMinutes(px, rect.width, viewStart, viewEnd)
     resizeSlotEdge(routineId, slot.id, edge, snapMinutes(raw))
@@ -167,11 +197,12 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
   const handleEdgePointerUp = (e: PointerEvent<HTMLDivElement>): void => {
     e.stopPropagation()
     e.currentTarget.releasePointerCapture(e.pointerId)
+    setIsResizing(false)
   }
 
   return (
     <div
-      className={`slot-block${isSelected ? ' is-selected' : ''}${isMoving ? ' is-moving' : ''}`}
+      className={`slot-block${isSelected ? ' is-selected' : ''}${isMoving ? ' is-moving' : ''}${isResizing ? ' is-resizing' : ''}`}
       style={{ left: `${leftPercent}%`, width: `${widthPercent}%`, background: slot.color }}
       onPointerDown={handleBlockPointerDown}
       onPointerMove={handleBlockPointerMove}

@@ -101,24 +101,56 @@ export function resizeSlotEdge(
 }
 
 /**
- * Slides a whole slot earlier/later by the same amount on both edges,
- * preserving its duration. Clamped to the gap bounded by its neighbors (or
- * the wake/sleep bounds) so it never overlaps or pushes anything else.
+ * Slides a whole slot earlier/later, preserving its own duration and every
+ * other slot's duration too — like reordering an iOS list: as soon as the
+ * dragged slot would touch the next slot in its path, they trade places
+ * (the neighbor jumps to the slot's old spot, the slot lands right after
+ * it) rather than shrinking anything. Dragging far enough in one motion
+ * cascades through multiple neighbors this way. Past its final neighbor,
+ * the slot is free to move within the resulting gap, clamped to the
+ * wake/sleep bounds.
  */
 export function moveSlot(routine: Routine, slotId: string, rawStartMinutes: number): Routine {
-  const slots = routine.slots
-  const i = slots.findIndex((s) => s.id === slotId)
+  const slots = routine.slots.slice()
+  let i = slots.findIndex((s) => s.id === slotId)
   if (i === -1) return routine
-  const slot = slots[i]
-  const duration = slot.endMinutes - slot.startMinutes
+  const duration = slots[i].endMinutes - slots[i].startMinutes
+
+  const desiredStart = clamp(rawStartMinutes, routine.wakeMinutes, routine.sleepMinutes - duration)
+  if (desiredStart === slots[i].startMinutes) return routine
+
+  if (desiredStart > slots[i].startMinutes) {
+    while (i < slots.length - 1 && desiredStart + duration > slots[i + 1].startMinutes) {
+      const current = slots[i]
+      const neighbor = slots[i + 1]
+      const neighborDuration = neighbor.endMinutes - neighbor.startMinutes
+      const newNeighborStart = current.startMinutes
+      const newNeighborEnd = newNeighborStart + neighborDuration
+      const newCurrentStart = newNeighborEnd
+      slots[i] = { ...neighbor, startMinutes: newNeighborStart, endMinutes: newNeighborEnd }
+      slots[i + 1] = { ...current, startMinutes: newCurrentStart, endMinutes: newCurrentStart + duration }
+      i += 1
+    }
+  } else {
+    while (i > 0 && desiredStart < slots[i - 1].endMinutes) {
+      const current = slots[i]
+      const neighbor = slots[i - 1]
+      const neighborDuration = neighbor.endMinutes - neighbor.startMinutes
+      const newNeighborEnd = current.endMinutes
+      const newNeighborStart = newNeighborEnd - neighborDuration
+      const newCurrentEnd = newNeighborStart
+      slots[i] = { ...neighbor, startMinutes: newNeighborStart, endMinutes: newNeighborEnd }
+      slots[i - 1] = { ...current, startMinutes: newCurrentEnd - duration, endMinutes: newCurrentEnd }
+      i -= 1
+    }
+  }
 
   const lowerBound = i === 0 ? routine.wakeMinutes : slots[i - 1].endMinutes
   const upperBound = i === slots.length - 1 ? routine.sleepMinutes : slots[i + 1].startMinutes
-  const startMinutes = clamp(rawStartMinutes, lowerBound, upperBound - duration)
+  const finalStart = clamp(desiredStart, lowerBound, upperBound - duration)
+  slots[i] = { ...slots[i], startMinutes: finalStart, endMinutes: finalStart + duration }
 
-  const next = slots.slice()
-  next[i] = { ...slot, startMinutes, endMinutes: startMinutes + duration }
-  return { ...routine, slots: next }
+  return { ...routine, slots }
 }
 
 /** Inserts a slot at an exact (already-validated) time range, e.g. from a click-drag gesture. */

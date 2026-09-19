@@ -1,5 +1,6 @@
-import type { PointerEvent, ReactElement, RefObject } from 'react'
+import { useRef, type PointerEvent, type ReactElement, type RefObject } from 'react'
 import { formatMinutes, minutesToPercent, pixelsToMinutes, snapMinutes } from '../lib/time'
+import { useRoutinesStore } from '../state/routinesStore'
 
 interface Props {
   trackRef: RefObject<HTMLDivElement | null>
@@ -10,17 +11,24 @@ interface Props {
 
 /** A draggable day-bound handle, used on the full-day overview bar. */
 export default function WakeSleepHandle({ trackRef, minutes, onDrag, label }: Props): ReactElement {
+  const pushHistory = useRoutinesStore((s) => s.pushHistory)
+  const hasDraggedRef = useRef(false)
   const percent = minutesToPercent(minutes)
 
   const handlePointerDown = (e: PointerEvent<HTMLDivElement>): void => {
     e.stopPropagation()
     e.currentTarget.setPointerCapture(e.pointerId)
+    hasDraggedRef.current = false
   }
 
   const handlePointerMove = (e: PointerEvent<HTMLDivElement>): void => {
     if (e.buttons === 0) return
     const rect = trackRef.current?.getBoundingClientRect()
     if (!rect) return
+    if (!hasDraggedRef.current) {
+      hasDraggedRef.current = true
+      pushHistory()
+    }
     const px = e.clientX - rect.left
     const raw = pixelsToMinutes(px, rect.width)
     onDrag(snapMinutes(raw))

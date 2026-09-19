@@ -8,6 +8,7 @@ import * as ops from '../lib/slotOps'
 
 export const DEFAULT_WAKE_MINUTES = 7 * 60
 export const DEFAULT_SLEEP_MINUTES = 23 * 60
+const MAX_HISTORY = 50
 
 export interface SelectedSlot {
   routineId: string
@@ -45,6 +46,8 @@ interface RoutinesState {
   routines: Routine[]
   loaded: boolean
   selectedSlot: SelectedSlot | null
+  past: Routine[][]
+  future: Routine[][]
 
   init(): Promise<void>
   addRoutine(): void
@@ -64,6 +67,13 @@ interface RoutinesState {
   selectSlot(routineId: string, slotId: string): void
   clearSelection(): void
   deleteSelectedSlot(): void
+
+  /** Snapshots the current routines onto the undo stack and clears redo. Call once per user
+   * gesture/edit *before* mutating — e.g. on pointerdown of a drag, not on every pointermove. */
+  pushHistory(): void
+  undo(): void
+  redo(): void
+  saveNow(): Promise<void>
 }
 
 function updateRoutine(
@@ -79,6 +89,8 @@ export const useRoutinesStore = create<RoutinesState>()(
     routines: [],
     loaded: false,
     selectedSlot: null,
+    past: [],
+    future: [],
 
     async init() {
       const data = await window.routinesAPI.load()
@@ -86,11 +98,13 @@ export const useRoutinesStore = create<RoutinesState>()(
     },
 
     addRoutine() {
+      get().pushHistory()
       const routine = createDefaultRoutine(`Routine ${get().routines.length + 1}`)
       set((state) => ({ routines: [...state.routines, routine] }))
     },
 
     duplicateRoutine(routineId) {
+      get().pushHistory()
       set((state) => {
         const idx = state.routines.findIndex((r) => r.id === routineId)
         if (idx === -1) return state
@@ -102,6 +116,7 @@ export const useRoutinesStore = create<RoutinesState>()(
     },
 
     deleteRoutine(routineId) {
+      get().pushHistory()
       set((state) => ({
         routines: state.routines.filter((r) => r.id !== routineId),
         selectedSlot: state.selectedSlot?.routineId === routineId ? null : state.selectedSlot
@@ -143,6 +158,7 @@ export const useRoutinesStore = create<RoutinesState>()(
     },
 
     createSlotAt(routineId, startMinutes, endMinutes) {
+      get().pushHistory()
       let createdId: string | null = null
       set((state) => ({
         routines: updateRoutine(state.routines, routineId, (r) => {
@@ -161,6 +177,7 @@ export const useRoutinesStore = create<RoutinesState>()(
     },
 
     addSlot(routineId) {
+      get().pushHistory()
       let createdId: string | null = null
       set((state) => ({
         routines: updateRoutine(state.routines, routineId, (r) => {
@@ -178,6 +195,7 @@ export const useRoutinesStore = create<RoutinesState>()(
     },
 
     duplicateSlot(routineId, slotId) {
+      get().pushHistory()
       let createdId: string | null = null
       set((state) => ({
         routines: updateRoutine(state.routines, routineId, (r) => {
@@ -190,6 +208,7 @@ export const useRoutinesStore = create<RoutinesState>()(
     },
 
     deleteSlot(routineId, slotId) {
+      get().pushHistory()
       set((state) => ({
         routines: updateRoutine(state.routines, routineId, (r) => ops.deleteSlot(r, slotId)),
         selectedSlot:
@@ -227,18 +246,61 @@ export const useRoutinesStore = create<RoutinesState>()(
       const sel = get().selectedSlot
       if (!sel) return
       get().deleteSlot(sel.routineId, sel.slotId)
+    },
+
+    pushHistory() {
+      set((state) => ({
+        past: [...state.past, state.routines].slice(-MAX_HISTORY),
+        future: []
+      }))
+    },
+
+    undo() {
+      set((state) => {
+        if (state.past.length === 0) return state
+        const previous = state.past[state.past.length - 1]
+        return {
+          routines: previous,
+          past: state.past.slice(0, -1),
+          future: [state.routines, ...state.future]
+        }
+      })
+    },
+
+    redo() {
+      set((state) => {
+        if (state.future.length === 0) return state
+        const next = state.future[0]
+        return {
+          routines: next,
+          past: [...state.past, state.routines],
+          future: state.future.slice(1)
+        }
+      })
+    },
+
+    async saveNow() {
+      await persistNow(get().routines)
     }
   }))
 )
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+function persistNow(routines: Routine[]): Promise<void> {
+  if (saveTimer) {
+    clearTimeout(saveTimer)
+    saveTimer = null
+  }
+  return window.routinesAPI.save({ version: 1, routines })
+}
+
 useRoutinesStore.subscribe(
   (state) => state.routines,
   (routines) => {
     if (!useRoutinesStore.getState().loaded) return
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
-      window.routinesAPI.save({ version: 1, routines })
+      persistNow(routines)
     }, 400)
   }
 )

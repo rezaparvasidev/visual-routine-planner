@@ -8,7 +8,8 @@ A Windows desktop app for visually building day routines — 24-hour timelines o
 - **Wake / sleep bounds** — set on a thin full-day overview bar per routine. The main timeline below it zooms to that range (plus a 1-hour blocked buffer on each side) so slots aren't squeezed into a tiny sliver of a full 24-hour bar.
 - **Noon / 6pm reference lines** — a fixed red vertical line marks 12:00 PM and 6:00 PM on every timeline, always drawn behind slots so it's never in the way.
 - **Time slots** — add colored, titled blocks between the wake and sleep bounds, either by clicking "+ Add Slot" or by clicking and dragging directly on empty timeline space. Each slot always shows its duration (e.g. "1h 30m") under its title.
-- **Move and resize with no overlap** — drag a slot's body to slide it, or its edges to resize it; dragging into a neighbor pushes that neighbor's edge to make room, so slots can never overlap.
+- **Move and resize with no overlap** — drag a slot's edge to resize it (pushing into a neighbor shrinks that neighbor's edge to make room), or drag its body to slide it. Dragging the body works like reordering an iOS list: the moment you drag into another slot, the two trade places — each keeps its own original length — rather than squeezing anything, so slots can never overlap.
+- **Undo / redo / save** — every add, delete, duplicate, move, resize, rename, and recolor can be undone and redone from the toolbar at the top of the app. The app autosaves continuously anyway; the Save button just flushes that immediately if you want the reassurance.
 - **Select, rename, recolor, duplicate, delete** — click a slot to select it, double-click its title to rename it in place, and use its toolbar to change color, duplicate, or delete it (or just press Delete/Backspace on a selected slot).
 - **Reusable custom colors** — any custom color you've picked for one slot shows up as a quick-pick swatch for every other slot, not just the 9 presets.
 - **Duplicate a whole routine** — copies its wake/sleep bounds and every slot in one click.
@@ -28,8 +29,9 @@ A Windows desktop app for visually building day routines — 24-hour timelines o
 
    Click empty timeline space, press **Escape**, or select another slot to deselect. Press **Delete** or **Backspace** to delete whichever slot is currently selected.
 5. **Rename a slot** — double-click its title text and type a new name.
-6. **Move or resize a slot** — drag the middle of a slot to slide it earlier/later, or drag its left/right edge to resize it. Dragging into a neighboring slot pushes that neighbor out of the way rather than overlapping it.
+6. **Move or resize a slot** — drag the middle of a slot to slide it earlier/later, or drag its left/right edge to resize it. Resizing into a neighbor shrinks that neighbor to make room; moving into a neighbor instead swaps places with it (like reordering a list) — each slot keeps its own length either way, so nothing ever overlaps.
 7. **Rename, duplicate, or remove a routine** — edit the routine's name field directly, or use **Duplicate Routine** / **Delete Routine** in its header.
+8. **Undo, redo, or save** — use the toolbar at the top of the app at any time.
 
 All changes save automatically to disk as you make them.
 

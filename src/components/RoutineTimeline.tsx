@@ -1,6 +1,7 @@
 import { useRef, useState, type PointerEvent, type ReactElement } from 'react'
+import type { Slot } from '@shared/domain'
 import { useRoutinesStore } from '../state/routinesStore'
-import { findEnclosingGap, findGaps } from '../lib/slotOps'
+import { findEnclosingGap, findGaps, moveSlot as previewMoveSlot } from '../lib/slotOps'
 import {
   DAY_MARKER_MINUTES,
   MIN_SLOT_DURATION,
@@ -35,9 +36,12 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
   const deleteRoutine = useRoutinesStore((s) => s.deleteRoutine)
   const renameRoutine = useRoutinesStore((s) => s.renameRoutine)
   const clearSelection = useRoutinesStore((s) => s.clearSelection)
+  const pushHistory = useRoutinesStore((s) => s.pushHistory)
+  const moveSlot = useRoutinesStore((s) => s.moveSlot)
 
   const trackRef = useRef<HTMLDivElement>(null)
   const [draft, setDraft] = useState<DraftRange | null>(null)
+  const [dragPreview, setDragPreview] = useState<{ slotId: string; slots: Slot[] } | null>(null)
 
   if (!routine) return null
 
@@ -64,6 +68,17 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
     const raw = pixelsToMinutes(e.clientX - rect.left, rect.width, viewStart, viewEnd)
     const clamped = Math.min(Math.max(snapMinutes(raw), draft.gapStart), draft.gapEnd)
     setDraft({ ...draft, current: clamped })
+  }
+
+  const handleMovePreview = (slotId: string, rawStartMinutes: number): void => {
+    const preview = previewMoveSlot(routine, slotId, rawStartMinutes)
+    setDragPreview({ slotId, slots: preview.slots })
+  }
+
+  const handleMoveCommit = (slotId: string, rawStartMinutes: number): void => {
+    setDragPreview(null)
+    pushHistory()
+    moveSlot(routineId, slotId, rawStartMinutes)
   }
 
   const handleTrackPointerUp = (e: PointerEvent<HTMLDivElement>): void => {
@@ -99,6 +114,7 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
           type="text"
           className="routine-name-input"
           value={routine.name}
+          onFocus={() => pushHistory()}
           onChange={(e) => renameRoutine(routineId, e.target.value)}
         />
         <div className="routine-actions">
@@ -167,16 +183,25 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
         {draft && (
           <div className="draft-slot" style={{ left: `${draftLeft}%`, width: `${draftWidth}%` }} />
         )}
-        {routine.slots.map((slot) => (
-          <SlotBlock
-            key={slot.id}
-            routineId={routineId}
-            slot={slot}
-            trackRef={trackRef}
-            viewStart={viewStart}
-            viewEnd={viewEnd}
-          />
-        ))}
+        {routine.slots.map((slot) => {
+          // Always iterate routine.slots (the store's stable order) so the DOM/key order
+          // never changes mid-drag - only look up the live preview position below. If we
+          // rendered from the (re-sorted) preview array instead, React would reorder the
+          // dragged slot's DOM node on every swap and it would lose pointer capture mid-drag.
+          const effective = dragPreview?.slots.find((s) => s.id === slot.id) ?? slot
+          return (
+            <SlotBlock
+              key={slot.id}
+              routineId={routineId}
+              slot={effective}
+              trackRef={trackRef}
+              viewStart={viewStart}
+              viewEnd={viewEnd}
+              onMovePreview={(rawStart) => handleMovePreview(slot.id, rawStart)}
+              onMoveCommit={(rawStart) => handleMoveCommit(slot.id, rawStart)}
+            />
+          )
+        })}
       </div>
     </div>
   )
