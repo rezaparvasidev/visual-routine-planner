@@ -1,20 +1,29 @@
 import type { ReactElement } from 'react'
+import { formatMinutes, minutesToPercent } from '../lib/time'
 
-const HOURS = Array.from({ length: 13 }, (_, i) => i * 2) // every 2 hours: 0,2,...,24
-
-function formatHour(h: number): string {
-  const hour24 = h % 24
-  const period = hour24 < 12 ? 'AM' : 'PM'
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
-  return h === 24 ? '12 AM' : `${hour12} ${period}`
+interface Props {
+  rangeStart: number
+  rangeEnd: number
 }
 
-export default function TimelineRuler(): ReactElement {
+/** Picks a tick spacing that keeps roughly 6-14 ticks across the visible range. */
+function pickStepMinutes(rangeMinutes: number): number {
+  if (rangeMinutes <= 6 * 60) return 30
+  if (rangeMinutes <= 14 * 60) return 60
+  return 120
+}
+
+export default function TimelineRuler({ rangeStart, rangeEnd }: Props): ReactElement {
+  const step = pickStepMinutes(rangeEnd - rangeStart)
+  const first = Math.ceil(rangeStart / step) * step
+  const ticks: number[] = []
+  for (let m = first; m <= rangeEnd; m += step) ticks.push(m)
+
   return (
     <div className="timeline-ruler">
-      {HOURS.map((h) => (
-        <span key={h} className="tick" style={{ left: `${(h / 24) * 100}%` }}>
-          {formatHour(h)}
+      {ticks.map((m) => (
+        <span key={m} className="tick" style={{ left: `${minutesToPercent(m, rangeStart, rangeEnd)}%` }}>
+          {formatMinutes(m)}
         </span>
       ))}
     </div>

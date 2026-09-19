@@ -1,6 +1,6 @@
 import { useRef, useState, type PointerEvent, type ReactElement, type RefObject } from 'react'
 import type { Slot } from '@shared/domain'
-import { pixelsToMinutes, snapMinutes } from '../lib/time'
+import { minutesToPercent, pixelsToMinutes, snapMinutes } from '../lib/time'
 import { useRoutinesStore } from '../state/routinesStore'
 import SlotEditor from './SlotEditor'
 
@@ -10,6 +10,8 @@ interface Props {
   routineId: string
   slot: Slot
   trackRef: RefObject<HTMLDivElement | null>
+  viewStart: number
+  viewEnd: number
   isOpen: boolean
   autoFocus: boolean
   onOpen: () => void
@@ -20,6 +22,8 @@ export default function SlotBlock({
   routineId,
   slot,
   trackRef,
+  viewStart,
+  viewEnd,
   isOpen,
   autoFocus,
   onOpen,
@@ -37,8 +41,8 @@ export default function SlotBlock({
   const dragStartMinutes = useRef(0)
   const didMove = useRef(false)
 
-  const leftPercent = (slot.startMinutes / 1440) * 100
-  const widthPercent = ((slot.endMinutes - slot.startMinutes) / 1440) * 100
+  const leftPercent = minutesToPercent(slot.startMinutes, viewStart, viewEnd)
+  const widthPercent = minutesToPercent(slot.endMinutes, viewStart, viewEnd) - leftPercent
 
   const handleBlockPointerDown = (e: PointerEvent<HTMLDivElement>): void => {
     e.stopPropagation()
@@ -58,7 +62,7 @@ export default function SlotBlock({
     }
     const rect = trackRef.current?.getBoundingClientRect()
     if (!rect) return
-    const deltaMinutes = pixelsToMinutes(deltaPx, rect.width)
+    const deltaMinutes = pixelsToMinutes(deltaPx, rect.width, 0, viewEnd - viewStart)
     const rawStart = snapMinutes(dragStartMinutes.current + deltaMinutes)
     moveSlot(routineId, slot.id, rawStart)
   }
@@ -90,7 +94,7 @@ export default function SlotBlock({
     const rect = trackRef.current?.getBoundingClientRect()
     if (!rect) return
     const px = e.clientX - rect.left
-    const raw = pixelsToMinutes(px, rect.width)
+    const raw = pixelsToMinutes(px, rect.width, viewStart, viewEnd)
     resizeSlotEdge(routineId, slot.id, edge, snapMinutes(raw))
   }
 

@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react'
 import { useRoutinesStore } from '../state/routinesStore'
 import { findEnclosingGap, findGaps } from '../lib/slotOps'
-import { MIN_SLOT_DURATION, formatMinutes, pixelsToMinutes, snapMinutes } from '../lib/time'
+import {
+  MIN_SLOT_DURATION,
+  computeViewRange,
+  formatMinutes,
+  minutesToPercent,
+  pixelsToMinutes,
+  snapMinutes
+} from '../lib/time'
 import TimelineRuler from './TimelineRuler'
-import WakeSleepHandle from './WakeSleepHandle'
+import RoutineOverview from './RoutineOverview'
 import SlotBlock from './SlotBlock'
 
 interface DraftRange {
@@ -43,12 +50,13 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
 
   if (!routine) return null
 
+  const { start: viewStart, end: viewEnd } = computeViewRange(routine.wakeMinutes, routine.sleepMinutes)
   const canAddSlot = findGaps(routine).some((g) => g.end - g.start >= MIN_SLOT_DURATION)
 
   const handleTrackPointerDown = (e: PointerEvent<HTMLDivElement>): void => {
     if (e.target !== trackRef.current) return
     const rect = trackRef.current.getBoundingClientRect()
-    const raw = pixelsToMinutes(e.clientX - rect.left, rect.width)
+    const raw = pixelsToMinutes(e.clientX - rect.left, rect.width, viewStart, viewEnd)
     const minutes = snapMinutes(raw)
     if (minutes < routine.wakeMinutes || minutes > routine.sleepMinutes) return
     const gap = findEnclosingGap(routine, minutes)
@@ -61,7 +69,7 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
     if (!draft || e.buttons === 0) return
     const rect = trackRef.current?.getBoundingClientRect()
     if (!rect) return
-    const raw = pixelsToMinutes(e.clientX - rect.left, rect.width)
+    const raw = pixelsToMinutes(e.clientX - rect.left, rect.width, viewStart, viewEnd)
     const clamped = Math.min(Math.max(snapMinutes(raw), draft.gapStart), draft.gapEnd)
     setDraft({ ...draft, current: clamped })
   }
@@ -77,10 +85,19 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
     }
   }
 
-  const draftLeft = draft ? (Math.min(draft.anchor, draft.current) / 1440) * 100 : 0
-  const draftWidth = draft ? (Math.abs(draft.current - draft.anchor) / 1440) * 100 : 0
-  const wakePercent = (routine.wakeMinutes / 1440) * 100
-  const sleepPercent = (routine.sleepMinutes / 1440) * 100
+  const draftLeft = draft
+    ? minutesToPercent(Math.min(draft.anchor, draft.current), viewStart, viewEnd)
+    : 0
+  const draftWidth = draft
+    ? minutesToPercent(Math.max(draft.anchor, draft.current), viewStart, viewEnd) - draftLeft
+    : 0
+  const wakePercent = minutesToPercent(routine.wakeMinutes, viewStart, viewEnd)
+  const sleepPercent = minutesToPercent(routine.sleepMinutes, viewStart, viewEnd)
+
+  const gridLines: { minutes: number; isHour: boolean }[] = []
+  for (let m = viewStart; m <= viewEnd; m += 30) {
+    gridLines.push({ minutes: m, isHour: m % 60 === 0 })
+  }
 
   return (
     <div className="routine-timeline">
@@ -107,15 +124,26 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
           </button>
         </div>
       </div>
-      <TimelineRuler />
       <div className="bounds-row">
-        <span className="bounds-label bounds-label--wake" style={{ left: `${wakePercent}%` }}>
+        <span
+          className="bounds-label bounds-label--wake"
+          style={{ left: `${minutesToPercent(routine.wakeMinutes)}%` }}
+        >
           Wake {formatMinutes(routine.wakeMinutes)}
         </span>
-        <span className="bounds-label bounds-label--sleep" style={{ left: `${sleepPercent}%` }}>
+        <span
+          className="bounds-label bounds-label--sleep"
+          style={{ left: `${minutesToPercent(routine.sleepMinutes)}%` }}
+        >
           Sleep {formatMinutes(routine.sleepMinutes)}
         </span>
       </div>
+      <RoutineOverview
+        routine={routine}
+        onDragWake={(m) => setWake(routineId, m)}
+        onDragSleep={(m) => setSleep(routineId, m)}
+      />
+      <TimelineRuler rangeStart={viewStart} rangeEnd={viewEnd} />
       <div
         className="timeline-track"
         ref={trackRef}
@@ -123,6 +151,13 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
         onPointerMove={handleTrackPointerMove}
         onPointerUp={handleTrackPointerUp}
       >
+        {gridLines.map((g) => (
+          <div
+            key={g.minutes}
+            className={`grid-line${g.isHour ? ' grid-line--hour' : ''}`}
+            style={{ left: `${minutesToPercent(g.minutes, viewStart, viewEnd)}%` }}
+          />
+        ))}
         <div className="inactive-region" style={{ left: 0, width: `${wakePercent}%` }} />
         <div
           className="inactive-region"
@@ -137,6 +172,8 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
             routineId={routineId}
             slot={slot}
             trackRef={trackRef}
+            viewStart={viewStart}
+            viewEnd={viewEnd}
             isOpen={openEditorSlotId === slot.id}
             autoFocus={autoFocusSlotId === slot.id}
             onOpen={() => {
@@ -149,18 +186,6 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
             }}
           />
         ))}
-        <WakeSleepHandle
-          trackRef={trackRef}
-          minutes={routine.wakeMinutes}
-          onDrag={(m) => setWake(routineId, m)}
-          label="Wake"
-        />
-        <WakeSleepHandle
-          trackRef={trackRef}
-          minutes={routine.sleepMinutes}
-          onDrag={(m) => setSleep(routineId, m)}
-          label="Sleep"
-        />
       </div>
     </div>
   )

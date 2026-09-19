@@ -1,5 +1,5 @@
 import type { PointerEvent, ReactElement, RefObject } from 'react'
-import { formatMinutes, pixelsToMinutes, snapMinutes } from '../lib/time'
+import { formatMinutes, minutesToPercent, pixelsToMinutes, snapMinutes } from '../lib/time'
 
 interface Props {
   trackRef: RefObject<HTMLDivElement | null>
@@ -8,8 +8,9 @@ interface Props {
   label: 'Wake' | 'Sleep'
 }
 
+/** A draggable day-bound handle, used on the full-day overview bar. */
 export default function WakeSleepHandle({ trackRef, minutes, onDrag, label }: Props): ReactElement {
-  const percent = (minutes / 1440) * 100
+  const percent = minutesToPercent(minutes)
 
   const handlePointerDown = (e: PointerEvent<HTMLDivElement>): void => {
     e.stopPropagation()

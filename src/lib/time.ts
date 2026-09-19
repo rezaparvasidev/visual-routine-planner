@@ -5,14 +5,27 @@ export const SNAP_MINUTES = 30
 export const MIN_SLOT_DURATION = 30
 export const MIN_RANGE = 30
 export const DEFAULT_SLOT_DURATION = 30
+/** How much blocked, non-editable time to show before wake / after sleep on the main timeline. */
+export const VIEW_PADDING_MINUTES = 60
 
-export function minutesToPixels(minutes: Minutes, containerWidthPx: number): number {
-  return (minutes / DAY_MINUTES) * containerWidthPx
+export function minutesToPercent(
+  minutes: Minutes,
+  rangeStart: Minutes = 0,
+  rangeEnd: Minutes = DAY_MINUTES
+): number {
+  const span = rangeEnd - rangeStart
+  if (span <= 0) return 0
+  return ((minutes - rangeStart) / span) * 100
 }
 
-export function pixelsToMinutes(px: number, containerWidthPx: number): Minutes {
-  if (containerWidthPx <= 0) return 0
-  return (px / containerWidthPx) * DAY_MINUTES
+export function pixelsToMinutes(
+  px: number,
+  containerWidthPx: number,
+  rangeStart: Minutes = 0,
+  rangeEnd: Minutes = DAY_MINUTES
+): Minutes {
+  if (containerWidthPx <= 0) return rangeStart
+  return rangeStart + (px / containerWidthPx) * (rangeEnd - rangeStart)
 }
 
 export function snapMinutes(minutes: Minutes): Minutes {
@@ -21,6 +34,18 @@ export function snapMinutes(minutes: Minutes): Minutes {
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
+}
+
+/** The main timeline's visible window: wake/sleep plus a blocked buffer, clamped to the day. */
+export function computeViewRange(
+  wakeMinutes: Minutes,
+  sleepMinutes: Minutes,
+  padding: Minutes = VIEW_PADDING_MINUTES
+): { start: Minutes; end: Minutes } {
+  return {
+    start: clamp(wakeMinutes - padding, 0, DAY_MINUTES),
+    end: clamp(sleepMinutes + padding, 0, DAY_MINUTES)
+  }
 }
 
 export function formatMinutes(minutes: Minutes): string {
