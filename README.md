@@ -2,6 +2,8 @@
 
 A Windows desktop app for visually building day routines — 24-hour timelines of colored, titled time slots, built entirely by drag-and-drop. There are no dates: a routine represents an abstract "a day" (e.g. "Weekday", "Weekend"), not a calendar entry, and you can create as many as you want.
 
+![Building a routine by dragging out slots, resizing, recoloring, and reordering them](./docs/creating-a-routine.gif)
+
 ## Features
 
 - **No dates** — every routine is a plain 24-hour timeline, not tied to a calendar.
