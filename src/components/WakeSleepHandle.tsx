@@ -38,10 +38,6 @@ export default function WakeSleepHandle({ trackRef, minutes, onDrag, label }: Pr
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       title={`${label}: ${formatMinutes(minutes)}`}
-    >
-      <span className="handle-label">
-        {label} {formatMinutes(minutes)}
-      </span>
-    </div>
+    />
   )
 }

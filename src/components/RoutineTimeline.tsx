@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react'
 import { useRoutinesStore } from '../state/routinesStore'
 import { findEnclosingGap, findGaps } from '../lib/slotOps'
-import { MIN_SLOT_DURATION, pixelsToMinutes, snapMinutes } from '../lib/time'
+import { MIN_SLOT_DURATION, formatMinutes, pixelsToMinutes, snapMinutes } from '../lib/time'
 import TimelineRuler from './TimelineRuler'
 import WakeSleepHandle from './WakeSleepHandle'
 import SlotBlock from './SlotBlock'
@@ -108,6 +108,14 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
         </div>
       </div>
       <TimelineRuler />
+      <div className="bounds-row">
+        <span className="bounds-label bounds-label--wake" style={{ left: `${wakePercent}%` }}>
+          Wake {formatMinutes(routine.wakeMinutes)}
+        </span>
+        <span className="bounds-label bounds-label--sleep" style={{ left: `${sleepPercent}%` }}>
+          Sleep {formatMinutes(routine.sleepMinutes)}
+        </span>
+      </div>
       <div
         className="timeline-track"
         ref={trackRef}

@@ -100,6 +100,27 @@ export function resizeSlotEdge(
   return { ...routine, slots: next }
 }
 
+/**
+ * Slides a whole slot earlier/later by the same amount on both edges,
+ * preserving its duration. Clamped to the gap bounded by its neighbors (or
+ * the wake/sleep bounds) so it never overlaps or pushes anything else.
+ */
+export function moveSlot(routine: Routine, slotId: string, rawStartMinutes: number): Routine {
+  const slots = routine.slots
+  const i = slots.findIndex((s) => s.id === slotId)
+  if (i === -1) return routine
+  const slot = slots[i]
+  const duration = slot.endMinutes - slot.startMinutes
+
+  const lowerBound = i === 0 ? routine.wakeMinutes : slots[i - 1].endMinutes
+  const upperBound = i === slots.length - 1 ? routine.sleepMinutes : slots[i + 1].startMinutes
+  const startMinutes = clamp(rawStartMinutes, lowerBound, upperBound - duration)
+
+  const next = slots.slice()
+  next[i] = { ...slot, startMinutes, endMinutes: startMinutes + duration }
+  return { ...routine, slots: next }
+}
+
 /** Inserts a slot at an exact (already-validated) time range, e.g. from a click-drag gesture. */
 export function createSlotAt(
   routine: Routine,

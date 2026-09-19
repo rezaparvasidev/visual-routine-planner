@@ -32,6 +32,7 @@ interface RoutinesState {
   setWake(routineId: string, rawMinutes: number): void
   setSleep(routineId: string, rawMinutes: number): void
   resizeSlotEdge(routineId: string, slotId: string, edge: 'start' | 'end', rawMinutes: number): void
+  moveSlot(routineId: string, slotId: string, rawStartMinutes: number): void
   createSlotAt(routineId: string, startMinutes: number, endMinutes: number): void
   addSlot(routineId: string): void
   duplicateSlot(routineId: string, slotId: string): void
@@ -91,6 +92,14 @@ export const useRoutinesStore = create<RoutinesState>()(
       set((state) => ({
         routines: updateRoutine(state.routines, routineId, (r) =>
           ops.resizeSlotEdge(r, slotId, edge, rawMinutes)
+        )
+      }))
+    },
+
+    moveSlot(routineId, slotId, rawStartMinutes) {
+      set((state) => ({
+        routines: updateRoutine(state.routines, routineId, (r) =>
+          ops.moveSlot(r, slotId, rawStartMinutes)
         )
       }))
     },

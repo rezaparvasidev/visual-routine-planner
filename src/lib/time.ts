@@ -1,8 +1,8 @@
 import type { Minutes } from '@shared/domain'
 
 export const DAY_MINUTES = 1440
-export const SNAP_MINUTES = 5
-export const MIN_SLOT_DURATION = 10
+export const SNAP_MINUTES = 30
+export const MIN_SLOT_DURATION = 30
 export const MIN_RANGE = 30
 export const DEFAULT_SLOT_DURATION = 30
 
