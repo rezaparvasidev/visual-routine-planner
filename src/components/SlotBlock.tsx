@@ -166,45 +166,45 @@ export default function SlotBlock({ routineId, slot, trackRef, viewStart, viewEn
         ) : (
           <span className="slot-title">{slot.title}</span>
         )}
-
-        {isSelected && !isRenaming && (
-          <div className="slot-tools" onPointerDown={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="slot-tool-btn"
-              title="Change color"
-              onClick={(e) => {
-                e.stopPropagation()
-                setColorPickerOpen((v) => !v)
-              }}
-            >
-              🎨
-            </button>
-            <button
-              type="button"
-              className="slot-tool-btn"
-              title="Duplicate slot"
-              onClick={(e) => {
-                e.stopPropagation()
-                duplicateSlot(routineId, slot.id)
-              }}
-            >
-              ⧉
-            </button>
-            <button
-              type="button"
-              className="slot-tool-btn"
-              title="Delete slot"
-              onClick={(e) => {
-                e.stopPropagation()
-                deleteSlot(routineId, slot.id)
-              }}
-            >
-              🗑
-            </button>
-          </div>
-        )}
       </div>
+
+      {isSelected && !isRenaming && (
+        <div className="slot-tools" onPointerDown={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="slot-tool-btn"
+            title="Change color"
+            onClick={(e) => {
+              e.stopPropagation()
+              setColorPickerOpen((v) => !v)
+            }}
+          >
+            🎨
+          </button>
+          <button
+            type="button"
+            className="slot-tool-btn"
+            title="Duplicate slot"
+            onClick={(e) => {
+              e.stopPropagation()
+              duplicateSlot(routineId, slot.id)
+            }}
+          >
+            ⧉
+          </button>
+          <button
+            type="button"
+            className="slot-tool-btn"
+            title="Delete slot"
+            onClick={(e) => {
+              e.stopPropagation()
+              deleteSlot(routineId, slot.id)
+            }}
+          >
+            🗑
+          </button>
+        </div>
+      )}
 
       <div
         className="slot-edge slot-edge--left"

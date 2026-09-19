@@ -7,7 +7,7 @@
   --text-dim: #9a9ca6;
   --accent: #4c8bf5;
   --danger: #e5484d;
-  --track-height: 108px;
+  --track-height: 138px;
 }
 
 * {
@@ -266,8 +266,8 @@ input[type='text'] {
 
 .slot-block {
   position: absolute;
-  top: 20px;
-  bottom: 6px;
+  top: 28px;
+  bottom: 28px;
   border-radius: 4px;
   cursor: grab;
   padding: 0 8px;
@@ -361,11 +361,16 @@ input[type='text'] {
 }
 
 .slot-block .slot-tools {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 4px;
   background: rgba(0, 0, 0, 0.6);
   padding: 3px;
   border-radius: 6px;
+  z-index: 5;
 }
 
 .slot-tool-btn {
@@ -382,7 +387,7 @@ input[type='text'] {
 
 .color-popover {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 38px);
   left: 0;
   z-index: 10;
   background: var(--panel);
