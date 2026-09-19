@@ -2,6 +2,7 @@ import { useRef, useState, type PointerEvent, type ReactElement } from 'react'
 import { useRoutinesStore } from '../state/routinesStore'
 import { findEnclosingGap, findGaps } from '../lib/slotOps'
 import {
+  DAY_MARKER_MINUTES,
   MIN_SLOT_DURATION,
   computeViewRange,
   formatMinutes,
@@ -89,8 +90,7 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
   for (let m = viewStart; m <= viewEnd; m += 30) {
     gridLines.push({ minutes: m, isHour: m % 60 === 0 })
   }
-  const NOON_MINUTES = 12 * 60
-  const showNoonLine = NOON_MINUTES >= viewStart && NOON_MINUTES <= viewEnd
+  const markers = DAY_MARKER_MINUTES.filter((m) => m >= viewStart && m <= viewEnd)
 
   return (
     <div className="routine-timeline">
@@ -152,12 +152,13 @@ export default function RoutineTimeline({ routineId }: Props): ReactElement | nu
             style={{ left: `${minutesToPercent(g.minutes, viewStart, viewEnd)}%` }}
           />
         ))}
-        {showNoonLine && (
+        {markers.map((m) => (
           <div
-            className="noon-line"
-            style={{ left: `${minutesToPercent(NOON_MINUTES, viewStart, viewEnd)}%` }}
+            key={m}
+            className="marker-line"
+            style={{ left: `${minutesToPercent(m, viewStart, viewEnd)}%` }}
           />
-        )}
+        ))}
         <div className="inactive-region" style={{ left: 0, width: `${wakePercent}%` }} />
         <div
           className="inactive-region"

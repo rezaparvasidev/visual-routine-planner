@@ -1,6 +1,6 @@
 import { useRef, type ReactElement } from 'react'
 import type { Routine } from '@shared/domain'
-import { minutesToPercent } from '../lib/time'
+import { DAY_MARKER_MINUTES, minutesToPercent } from '../lib/time'
 import WakeSleepHandle from './WakeSleepHandle'
 
 interface Props {
@@ -26,7 +26,9 @@ export default function RoutineOverview({ routine, onDragWake, onDragSleep }: Pr
         className="overview-active"
         style={{ left: `${wakePercent}%`, width: `${sleepPercent - wakePercent}%` }}
       />
-      <div className="noon-line" style={{ left: '50%' }} />
+      {DAY_MARKER_MINUTES.map((m) => (
+        <div key={m} className="marker-line" style={{ left: `${minutesToPercent(m)}%` }} />
+      ))}
       <WakeSleepHandle trackRef={trackRef} minutes={routine.wakeMinutes} onDrag={onDragWake} label="Wake" />
       <WakeSleepHandle
         trackRef={trackRef}

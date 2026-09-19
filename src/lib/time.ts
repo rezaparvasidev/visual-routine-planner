@@ -7,6 +7,8 @@ export const MIN_RANGE = 30
 export const DEFAULT_SLOT_DURATION = 30
 /** How much blocked, non-editable time to show before wake / after sleep on the main timeline. */
 export const VIEW_PADDING_MINUTES = 60
+/** Fixed reference points marked with a red line on every timeline: 12:00 PM and 6:00 PM. */
+export const DAY_MARKER_MINUTES: Minutes[] = [12 * 60, 18 * 60]
 
 export function minutesToPercent(
   minutes: Minutes,
